@@ -38,14 +38,14 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-of
 const UI={
 en:{title:"Political Mirror by Rohit Tripathi",tag:"Follow your emotion and answer the questions as quickly as possible.",name:"Name to print on your certificate (optional)",begin:"Begin",
  tp:"How acceptable is this?",tf:"True, false, or not sure?",tl:"How much do you agree?",T:"True",F:"False",U:"Not sure",
- part:(p,i,n)=>`Part ${p} of 3 · item ${i} of ${n}`,dl:"Download PDF",again:"Take it again",fail:"Could not save automatically. Use your browser's print option and choose Save as PDF.",
+ part:(p,i,n)=>`Part ${p} of 3 · item ${i} of ${n}`,dl:"Download PDF",again:"Take it again",retake:"Your answers were repetitive or not consistent enough to give a reliable certificate, so none was issued. Please retake the test and think about each question.",fail:"Could not save automatically. Use your browser's print option and choose Save as PDF.",
  SC:["Completely unacceptable","Unacceptable","Mixed","Acceptable","Completely acceptable"],LS:["Strongly disagree","Disagree","Neutral","Agree","Strongly agree"],
  P:{BJP:"BJP",Congress:"Congress"},
  cert:{h:"Certificate of Political Mind",c:"This is to certify that",b:"The Bearer",a:"has been assessed by the Political Mirror and is hereby certified as",d:"Date: ",s:"Political Mirror by Rohit Tripathi",loc:"en-IN"},
  V:[{t:"Andhbhakt",sub:""},{t:"Chamcha",sub:""},{t:"Independent Thinker",sub:"Deshbhakt"}]},
 hi:{title:"Political Mirror by Rohit Tripathi",tag:"अपनी भावनाओं का अनुसरण करें और सवालों के जवाब जितनी जल्दी हो सके दें।",name:"प्रमाण पत्र पर छपने वाला नाम (वैकल्पिक)",begin:"शुरू करें",
  tp:"यह कितना स्वीकार्य है?",tf:"सही, ग़लत, या पता नहीं?",tl:"आप कितना सहमत हैं?",T:"सही",F:"ग़लत",U:"पता नहीं",
- part:(p,i,n)=>`भाग ${p}/3 · प्रश्न ${i}/${n}`,dl:"PDF डाउनलोड करें",again:"दोबारा करें",fail:"अपने-आप सेव नहीं हो सका। ब्राउज़र का प्रिंट विकल्प चुनकर 'Save as PDF' करें।",
+ part:(p,i,n)=>`भाग ${p}/3 · प्रश्न ${i}/${n}`,dl:"PDF डाउनलोड करें",again:"दोबारा करें",retake:"आपके उत्तर दोहराव वाले या पर्याप्त रूप से संगत नहीं थे, इसलिए प्रमाण पत्र जारी नहीं किया गया। कृपया टेस्ट दोबारा दें और हर सवाल पर सोचकर उत्तर दें।",fail:"अपने-आप सेव नहीं हो सका। ब्राउज़र का प्रिंट विकल्प चुनकर 'Save as PDF' करें।",
  SC:["बिल्कुल अस्वीकार्य","अस्वीकार्य","मिला-जुला","स्वीकार्य","पूरी तरह स्वीकार्य"],LS:["बिल्कुल असहमत","असहमत","तटस्थ","सहमत","पूरी तरह सहमत"],
  P:{BJP:"भाजपा",Congress:"कांग्रेस"},
  cert:{h:"राजनीतिक सोच का प्रमाण पत्र",c:"यह प्रमाणित किया जाता है कि",b:"धारक",a:"का पॉलिटिकल मिरर द्वारा आकलन किया गया और इन्हें आधिकारिक रूप से प्रमाणित किया जाता है",d:"दिनांक: ",s:"Political Mirror by Rohit Tripathi",loc:"hi-IN"},
@@ -124,14 +124,27 @@ function show(){
   app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{ans[i]=b.dataset.v;i++;i<Qs.length?show():result()});
 }
 function result(){
-  const u=UI[lang],pr=PAIRS.map(()=>({})),lk={LB:[],LC:[],AO:[]};let fB=0,fC=0;
+  const u=UI[lang],pr=PAIRS.map(()=>({})),lk={LB:[],LC:[],AO:[]},raw={LB:[[],[]],LC:[[],[]],AO:[[],[]]};
+  const nums=[],fa=[];let fB=0,fC=0,ok=0;
   Qs.forEach((q,j)=>{const a=ans[j];
-    if(q.k==='p')pr[q.n][q.P]=+a;
-    else if(q.k==='l'){const l=LK[q.n],v=+a;lk[l.k].push(l.r?6-v:v)}
-    else{const f=FACTS[q.n];if(a!=='U'&&((a==='T')!==!!f.v)){((f.d==='B'&&f.v)||(f.d==='C'&&!f.v))?fB++:fC++}}});
-  const D=mean(pr.map(p=>p.BJP-p.Congress));
+    if(q.k==='p'){pr[q.n][q.P]=+a;nums.push(+a)}
+    else if(q.k==='l'){const l=LK[q.n],v=+a;nums.push(v);lk[l.k].push(l.r?6-v:v);raw[l.k][l.r].push(v)}
+    else{const f=FACTS[q.n];fa.push(a);const c=a!=='U'&&((a==='T')===!!f.v);if(c)ok++;
+      if(a!=='U'&&!c){((f.d==='B'&&f.v)||(f.d==='C'&&!f.v))?fB++:fC++}}});
+  /* Validity checks: contradictory answers on reverse-coded items, or the same answer repeated. */
+  const gap=k=>Math.abs(mean(raw[k][0])-mean(raw[k][1].map(v=>6-v)));
+  const inc=mean(['LB','LC','AO'].map(gap));
+  const same=Math.max(...[1,2,3,4,5].map(n=>nums.filter(x=>x===n).length));
+  const fsame=Math.max(...['T','F','U'].map(c=>fa.filter(x=>x===c).length));
+  const careless=inc>=2.5||same>=0.9*nums.length||(fsame>=11&&same>=0.7*nums.length);
+  const diffs=pr.map(p=>p.BJP-p.Congress);
+  const D=mean(diffs),A=mean(diffs.map(Math.abs)),AO=mean(lk.AO),acc=ok/FACTS.length;
   const lean=0.4*(D/4)+0.3*((fB-fC)/6)+0.3*((mean(lk.LB)-mean(lk.LC))/4);
-  const v=lean>=0.2?0:lean<=-0.2?1:2;
+  const v=careless?-1:lean>=0.2?0:lean<=-0.2?1:(AO>=3.25&&A<=1.5&&acc>=0.5)?2:-1;
+  if(v<0){
+    app.innerHTML=`<div class="card"><p class="q">${u.retake}</p><p><button class="go" id="rt">${u.again}</button></p></div>`;
+    document.getElementById('rt').onclick=intro;return;
+  }
   app.innerHTML=`<div class="card"><canvas id="cv" width="1600" height="1131" role="img" aria-label="${u.V[v].t}" style="width:100%;height:auto;border-radius:4px;display:block"></canvas>
   <p><button class="go" id="dl">${u.dl}</button> <button class="go alt" id="rt">${u.again}</button></p><p class="mute" id="msg"></p></div>`;
   const cv=document.getElementById('cv');
