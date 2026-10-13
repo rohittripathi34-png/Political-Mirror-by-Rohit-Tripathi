@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Political Mirror by Rohit Tripathi</title>
+<style>
+:root{--bg:#f3f1ec;--ink:#1b2430;--mute:#5c6673;--line:#d6d2c8;--card:#fffefb;--acc:#1f4e79}
+@media(prefers-color-scheme:dark){:root{--bg:#161b22;--ink:#e8e6e1;--mute:#98a1ad;--line:#2d3641;--card:#1d242d;--acc:#7fb0e0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,"Noto Serif Devanagari","Mangal","Nirmala UI",serif;line-height:1.6;display:flex;justify-content:center;padding:24px 16px}
+main{width:100%;max-width:720px}
+h1{font-size:clamp(1.8rem,6vw,2.6rem);line-height:1.2;margin:.3em 0 .5em}
+p{margin:.6em 0}.mute{color:var(--mute);font-size:.92rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:22px;margin-bottom:16px}
+button{font:inherit;cursor:pointer;color:var(--ink)}
+.opt{display:block;width:100%;text-align:left;background:transparent;border:1px solid var(--line);border-radius:8px;padding:11px 14px;margin:8px 0}
+.opt:hover{border-color:var(--acc)}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:14px}
+.scale .opt{text-align:center;margin:0;padding:10px 4px;font-size:.85rem}
+.scale .opt b{display:block;font-size:1.2rem}
+.go{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:12px 22px;font-weight:bold}
+@media(prefers-color-scheme:dark){.go{color:#10161d}}
+.go.alt{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.lang{display:flex;gap:8px;margin:14px 0}
+.lang button{flex:1;border:1px solid var(--line);background:transparent;border-radius:8px;padding:10px;font-weight:bold}
+.lang button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+@media(prefers-color-scheme:dark){.lang button.on{color:#10161d}}
+button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.bar{height:6px;background:var(--line);border-radius:3px;margin-bottom:14px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc)}
+.q{font-size:1.15rem;margin:0}
+.tag{display:inline-block;font-size:.8rem;color:var(--mute);border:1px solid var(--line);border-radius:12px;padding:1px 10px;margin-bottom:10px}
+</style>
+</head>
+<body><main><div id="app"></div></main>
+<script>
+const UI={
+en:{title:"Political Mirror by Rohit Tripathi",tag:"Follow your emotion and answer the questions as quickly as possible.",name:"Name to print on your certificate (optional)",begin:"Begin",
+ tp:"How acceptable is this?",tf:"True, false, or not sure?",tl:"How much do you agree?",T:"True",F:"False",U:"Not sure",
+ part:(p,i,n)=>`Part ${p} of 3 · item ${i} of ${n}`,dl:"Download PDF",again:"Take it again",fail:"Could not save automatically. Use your browser's print option and choose Save as PDF.",
+ SC:["Completely unacceptable","Unacceptable","Mixed","Acceptable","Completely acceptable"],LS:["Strongly disagree","Disagree","Neutral","Agree","Strongly agree"],
+ P:{BJP:"BJP",Congress:"Congress"},
+ cert:{h:"Certificate of Political Mind",c:"This is to certify that",b:"The Bearer",a:"has been assessed by the Political Mirror and is hereby certified as",d:"Date: ",s:"Political Mirror by Rohit Tripathi",loc:"en-IN"},
+ V:[{t:"Andhbhakt",sub:""},{t:"Chamcha",sub:""},{t:"Independent Thinker",sub:"Deshbhakt"}]},
+hi:{title:"Political Mirror by Rohit Tripathi",tag:"अपनी भावनाओं का अनुसरण करें और सवालों के जवाब जितनी जल्दी हो सके दें।",name:"प्रमाण पत्र पर छपने वाला नाम (वैकल्पिक)",begin:"शुरू करें",
+ tp:"यह कितना स्वीकार्य है?",tf:"सही, ग़लत, या पता नहीं?",tl:"आप कितना सहमत हैं?",T:"सही",F:"ग़लत",U:"पता नहीं",
+ part:(p,i,n)=>`भाग ${p}/3 · प्रश्न ${i}/${n}`,dl:"PDF डाउनलोड करें",again:"दोबारा करें",fail:"अपने-आप सेव नहीं हो सका। ब्राउज़र का प्रिंट विकल्प चुनकर 'Save as PDF' करें।",
+ SC:["बिल्कुल अस्वीकार्य","अस्वीकार्य","मिला-जुला","स्वीकार्य","पूरी तरह स्वीकार्य"],LS:["बिल्कुल असहमत","असहमत","तटस्थ","सहमत","पूरी तरह सहमत"],
+ P:{BJP:"भाजपा",Congress:"कांग्रेस"},
+ cert:{h:"राजनीतिक सोच का प्रमाण पत्र",c:"यह प्रमाणित किया जाता है कि",b:"धारक",a:"का पॉलिटिकल मिरर द्वारा आकलन किया गया और इन्हें आधिकारिक रूप से प्रमाणित किया जाता है",d:"दिनांक: ",s:"Political Mirror by Rohit Tripathi",loc:"hi-IN"},
+ V:[{t:"अंधभक्त",sub:""},{t:"चमचा",sub:""},{t:"स्वतंत्र विचारक",sub:"देशभक्त"}]}};
+const PAIRS=[
+{en:P=>`A ${P}-led Union government's agencies (CBI, ED, Income Tax) open many cases against opposition leaders; few end in convictions.`,hi:P=>`${P}-नेतृत्व वाली केंद्र सरकार की एजेंसियाँ (CBI, ED, आयकर) विपक्षी नेताओं पर कई मामले दर्ज करती हैं; बहुत कम मामलों में सज़ा होती है।`},
+{en:P=>`A ${P}-led Union government uses the Governor's office or Article 356 to dismiss or destabilise an opposition-ruled state government.`,hi:P=>`${P}-नेतृत्व वाली केंद्र सरकार राज्यपाल के पद या अनुच्छेद 356 का उपयोग करके विपक्ष-शासित राज्य सरकार को बर्खास्त या अस्थिर करती है।`},
+{en:P=>`The ${P} engineers defections of opposition MLAs that topple an elected state government.`,hi:P=>`${P} विपक्षी विधायकों का दलबदल करवाती है, जिससे एक निर्वाचित राज्य सरकार गिर जाती है।`},
+{en:P=>`A ${P}-led government suspends civil liberties or phone and internet services in a region for a long period, citing security.`,hi:P=>`${P}-नेतृत्व वाली सरकार सुरक्षा का हवाला देकर किसी क्षेत्र में लंबे समय तक नागरिक स्वतंत्रताएँ या फ़ोन-इंटरनेट सेवाएँ बंद रखती है।`},
+{en:P=>`The ${P} repeatedly hands party tickets and top posts to family members of its senior leaders.`,hi:P=>`${P} बार-बार अपने वरिष्ठ नेताओं के परिवार के सदस्यों को पार्टी टिकट और बड़े पद देती है।`},
+{en:P=>`A ${P}-led government passes a major law with minimal debate and almost no committee scrutiny.`,hi:P=>`${P}-नेतृत्व वाली सरकार बहुत कम बहस और लगभग बिना समिति-जाँच के कोई बड़ा क़ानून पास कर देती है।`},
+{en:P=>`The ${P} takes a major decision widely seen as shaped by one religious community's sentiments, for electoral gain.`,hi:P=>`${P} ऐसा बड़ा फ़ैसला लेती है जिसे चुनावी लाभ के लिए किसी एक धार्मिक समुदाय की भावनाओं से प्रभावित माना जाता है।`},
+{en:P=>`The ${P} receives large, opaque political funding that the courts later criticise.`,hi:P=>`${P} को बड़ा, अपारदर्शी राजनीतिक चंदा मिलता है, जिसकी अदालतें बाद में आलोचना करती हैं।`}
+];
+/* v = claim is true (1) or false (0); d = whose side the claim damages */
+const FACTS=[
+{v:1,d:'C',en:"In 1986 Rajiv Gandhi's government passed a law that overrode the Supreme Court's Shah Bano judgment.",hi:"1986 में राजीव गांधी सरकार ने ऐसा क़ानून पास किया जिसने शाह बानो मामले में सुप्रीम कोर्ट के फ़ैसले को पलट दिया।"},
+{v:1,d:'C',en:"In 2018 the Delhi High Court convicted Congress leader Sajjan Kumar in a 1984 anti-Sikh riots case and sentenced him to life.",hi:"2018 में दिल्ली हाईकोर्ट ने कांग्रेस नेता सज्जन कुमार को 1984 के सिख-विरोधी दंगों के एक मामले में दोषी ठहराकर उम्रकैद की सज़ा सुनाई।"},
+{v:0,d:'C',en:"In 2017 a special CBI court convicted former telecom minister A. Raja in the 2G spectrum case.",hi:"2017 में एक विशेष CBI अदालत ने पूर्व दूरसंचार मंत्री ए. राजा को 2G स्पेक्ट्रम मामले में दोषी ठहराया।"},
+{v:1,d:'C',en:"Most uses of Article 356 since 1950 happened under Congress-led Union governments.",hi:"1950 के बाद अनुच्छेद 356 का सबसे ज़्यादा इस्तेमाल कांग्रेस-नेतृत्व वाली केंद्र सरकारों के दौरान हुआ।"},
+{v:0,d:'C',en:"The Supreme Court in 2023 upheld Rahul Gandhi's defamation conviction and left his disqualification in force.",hi:"सुप्रीम कोर्ट ने 2023 में राहुल गांधी की मानहानि की सज़ा बरकरार रखी और उनकी अयोग्यता जारी रखी।"},
+{v:1,d:'C',en:"During the 1975 Emergency, press censorship was imposed and thousands of opposition leaders were detained.",hi:"1975 के आपातकाल में प्रेस पर सेंसरशिप लगी और हज़ारों विपक्षी नेताओं को हिरासत में लिया गया।"},
+{v:1,d:'B',en:"In 2024 the Supreme Court struck down the electoral bonds scheme as unconstitutional.",hi:"2024 में सुप्रीम कोर्ट ने इलेक्टोरल बॉन्ड योजना को असंवैधानिक बताकर रद्द कर दिया।"},
+{v:1,d:'B',en:"In 2016 the Supreme Court restored the dismissed Congress government in Arunachal Pradesh, holding the Governor's actions unconstitutional.",hi:"2016 में सुप्रीम कोर्ट ने अरुणाचल प्रदेश में बर्खास्त कांग्रेस सरकार को बहाल किया और राज्यपाल के क़दमों को असंवैधानिक माना।"},
+{v:0,d:'B',en:"In December 2018 the Supreme Court found evidence of corruption in the Rafale deal and ordered a criminal probe.",hi:"दिसंबर 2018 में सुप्रीम कोर्ट ने राफेल सौदे में भ्रष्टाचार के सबूत पाए और आपराधिक जाँच का आदेश दिया।"},
+{v:1,d:'B',en:"RBI data showed over 99% of demonetised ₹500 and ₹1,000 notes returned to the banking system.",hi:"RBI के आँकड़ों के अनुसार नोटबंदी में बंद हुए ₹500 और ₹1,000 के 99% से अधिक नोट बैंकिंग प्रणाली में लौट आए।"},
+{v:1,d:'B',en:"The Supreme Court's 2019 Ayodhya verdict described the 1992 demolition of the Babri Masjid as a violation of law.",hi:"सुप्रीम कोर्ट के 2019 के अयोध्या फ़ैसले ने 1992 में बाबरी मस्जिद के ध्वंस को क़ानून का उल्लंघन बताया।"},
+{v:0,d:'B',en:"In 2022 the Supreme Court held that Narendra Modi was complicit in the 2002 Gujarat riots.",hi:"2022 में सुप्रीम कोर्ट ने माना कि 2002 के गुजरात दंगों में नरेंद्र मोदी की संलिप्तता थी।"}
+];
+const LK=[
+{k:'LB',r:0,en:"Most criticism of the BJP is driven by bias, not facts.",hi:"भाजपा की ज़्यादातर आलोचना तथ्यों से नहीं, पक्षपात से प्रेरित होती है।"},
+{k:'LB',r:0,en:"I would defend a BJP leader even if the allegations against them looked credible.",hi:"भाजपा के किसी नेता पर लगे आरोप विश्वसनीय लगें, तब भी मैं उनका बचाव करूँगा/करूँगी।"},
+{k:'LB',r:0,en:"BJP leaders rarely make serious mistakes.",hi:"भाजपा के नेता शायद ही कभी गंभीर ग़लतियाँ करते हैं।"},
+{k:'LB',r:1,en:"I would withdraw my support for the BJP if it failed on an issue I care about.",hi:"अगर भाजपा मेरे लिए ज़रूरी किसी मुद्दे पर विफल रहे, तो मैं अपना समर्थन वापस ले लूँगा/लूँगी।"},
+{k:'LC',r:0,en:"Most criticism of the Congress is driven by bias, not facts.",hi:"कांग्रेस की ज़्यादातर आलोचना तथ्यों से नहीं, पक्षपात से प्रेरित होती है।"},
+{k:'LC',r:0,en:"I would defend a Congress leader even if the allegations against them looked credible.",hi:"कांग्रेस के किसी नेता पर लगे आरोप विश्वसनीय लगें, तब भी मैं उनका बचाव करूँगा/करूँगी।"},
+{k:'LC',r:0,en:"Congress leaders rarely make serious mistakes.",hi:"कांग्रेस के नेता शायद ही कभी गंभीर ग़लतियाँ करते हैं।"},
+{k:'LC',r:1,en:"I would withdraw my support for the Congress if it failed on an issue I care about.",hi:"अगर कांग्रेस मेरे लिए ज़रूरी किसी मुद्दे पर विफल रहे, तो मैं अपना समर्थन वापस ले लूँगा/लूँगी।"},
+{k:'AO',r:0,en:"I change my political opinion when I see good evidence against it.",hi:"अच्छे सबूत मिलने पर मैं अपनी राजनीतिक राय बदल लेता/लेती हूँ।"},
+{k:'AO',r:1,en:"Changing your mind about politics is a sign of weakness.",hi:"राजनीति पर अपनी राय बदलना कमज़ोरी की निशानी है।"},
+{k:'AO',r:0,en:"I regularly read sources that disagree with my politics.",hi:"मैं नियमित रूप से ऐसे स्रोत पढ़ता/पढ़ती हूँ जो मेरी राजनीतिक सोच से असहमत हैं।"},
+{k:'AO',r:1,en:"If a claim helps my side, I don't need to check it closely.",hi:"अगर कोई दावा मेरे पक्ष को फ़ायदा पहुँचाता है, तो मुझे उसे ध्यान से जाँचने की ज़रूरत नहीं।"}
+];
+const COL=["#a8480f","#1f6b46","#1f4e79"];
+const app=document.getElementById('app');
+const shuf=a=>{a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.random()*(k+1)|0;[a[k],a[j]]=[a[j],a[k]]}return a};
+const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+let Qs,i,ans,NAME="",lang="en";
+
+function build(){
+  let p;
+  do{p=shuf(PAIRS.flatMap((_,n)=>[{k:'p',n,P:'BJP'},{k:'p',n,P:'Congress'}]))}
+  while(p.some((x,j)=>j&&x.n===p[j-1].n||j>1&&x.n===p[j-2].n));
+  Qs=[...p,...shuf(FACTS.map((_,n)=>({k:'f',n}))),...shuf(LK.map((_,n)=>({k:'l',n})))];
+  ans=[];i=0;
+}
+function intro(){
+  const u=UI[lang];document.documentElement.lang=lang;
+  app.innerHTML=`<h1>${u.title}</h1><div class="card">
+  <p style="font-size:1.15rem">${u.tag}</p>
+  <div class="lang" role="group" aria-label="Language"><button data-l="en" class="${lang==='en'?'on':''}">English</button><button data-l="hi" class="${lang==='hi'?'on':''}">हिन्दी</button></div>
+  <p><label for="nm" class="mute">${u.name}</label><br>
+  <input id="nm" maxlength="40" autocomplete="off" value="${NAME.replace(/"/g,'&quot;')}" style="font:inherit;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);margin-top:4px"></p>
+  <button class="go" id="st">${u.begin}</button></div>`;
+  app.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>{NAME=document.getElementById('nm').value;lang=b.dataset.l;intro()});
+  document.getElementById('st').onclick=()=>{NAME=document.getElementById('nm').value.trim();build();show()};
+}
+function show(){
+  const u=UI[lang],q=Qs[i],part=q.k==='p'?1:q.k==='f'?2:3;
+  let h=`<div class="bar"><i style="width:${i/Qs.length*100}%"></i></div><p class="mute">${u.part(part,i+1,Qs.length)}</p><div class="card">`;
+  const sc=(L)=>`<div class="scale">${L.map((x,v)=>`<button class="opt" data-v="${v+1}"><b>${v+1}</b>${x}</button>`).join('')}</div>`;
+  if(q.k==='p')h+=`<span class="tag">${u.tp}</span><p class="q">${PAIRS[q.n][lang](u.P[q.P])}</p>${sc(u.SC)}`;
+  else if(q.k==='f')h+=`<span class="tag">${u.tf}</span><p class="q">${FACTS[q.n][lang]}</p><button class="opt" data-v="T">${u.T}</button><button class="opt" data-v="F">${u.F}</button><button class="opt" data-v="U">${u.U}</button>`;
+  else h+=`<span class="tag">${u.tl}</span><p class="q">${LK[q.n][lang]}</p>${sc(u.LS)}`;
+  app.innerHTML=h+`</div>`;
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{ans[i]=b.dataset.v;i++;i<Qs.length?show():result()});
+}
+function result(){
+  const u=UI[lang],pr=PAIRS.map(()=>({})),lk={LB:[],LC:[],AO:[]};let fB=0,fC=0;
+  Qs.forEach((q,j)=>{const a=ans[j];
+    if(q.k==='p')pr[q.n][q.P]=+a;
+    else if(q.k==='l'){const l=LK[q.n],v=+a;lk[l.k].push(l.r?6-v:v)}
+    else{const f=FACTS[q.n];if(a!=='U'&&((a==='T')!==!!f.v)){((f.d==='B'&&f.v)||(f.d==='C'&&!f.v))?fB++:fC++}}});
+  const D=mean(pr.map(p=>p.BJP-p.Congress));
+  const lean=0.4*(D/4)+0.3*((fB-fC)/6)+0.3*((mean(lk.LB)-mean(lk.LC))/4);
+  const v=lean>=0.2?0:lean<=-0.2?1:2;
+  app.innerHTML=`<div class="card"><canvas id="cv" width="1600" height="1131" role="img" aria-label="${u.V[v].t}" style="width:100%;height:auto;border-radius:4px;display:block"></canvas>
+  <p><button class="go" id="dl">${u.dl}</button> <button class="go alt" id="rt">${u.again}</button></p><p class="mute" id="msg"></p></div>`;
+  const cv=document.getElementById('cv');
+  const paint=()=>drawCert(cv,v,NAME);paint();
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(paint);
+  document.getElementById('rt').onclick=intro;
+  document.getElementById('dl').onclick=async()=>{
+    const m=document.getElementById('msg');
+    try{const bin=atob(cv.toDataURL('image/jpeg',0.93).split(',')[1]),a=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)a[k]=bin.charCodeAt(k);
+      await saveFile(makePDF(a,cv.width,cv.height),'Political-Mirror-Certificate.pdf');m.textContent='';}
+    catch(e){m.textContent=e&&e.code==='declined'?'':u.fail}};
+}
+function drawCert(cv,v,name){
+  const u=UI[lang],ce=u.cert,x=cv.getContext('2d'),W=cv.width,H=cv.height,C=COL[v],F='Georgia,"Noto Serif Devanagari","Mangal","Nirmala UI","Times New Roman",serif';
+  x.fillStyle='#fbf6e9';x.fillRect(0,0,W,H);
+  x.strokeStyle=C;x.lineWidth=16;x.strokeRect(36,36,W-72,H-72);
+  x.lineWidth=3;x.strokeRect(70,70,W-140,H-140);
+  [[70,70],[W-70,70],[70,H-70],[W-70,H-70]].forEach(([a,b])=>{x.fillStyle=C;x.beginPath();x.arc(a,b,22,0,7);x.fill();x.fillStyle='#fbf6e9';x.beginPath();x.arc(a,b,9,0,7);x.fill()});
+  x.textAlign='center';
+  const T=(t,y,sz,st,col,max)=>{let z=sz;x.font=`${st} ${z}px ${F}`;while(x.measureText(t).width>(max||1200)&&z>20){z-=2;x.font=`${st} ${z}px ${F}`}x.fillStyle=col||'#1b2430';x.fillText(t,W/2,y)};
+  T(ce.h,230,70,"italic",C);
+  x.strokeStyle=C;x.lineWidth=2;x.beginPath();x.moveTo(W/2-220,270);x.lineTo(W/2+220,270);x.stroke();
+  T(ce.c,350,34,"normal","#5c6673");
+  T(name||ce.b,450,84,"bold");
+  x.strokeStyle='#8a8f98';x.lineWidth=2;x.beginPath();x.moveTo(W/2-420,478);x.lineTo(W/2+420,478);x.stroke();
+  T(ce.a,545,32,"normal","#5c6673",1250);
+  T(u.V[v].t,720,150,"bold",C,1250);
+  if(u.V[v].sub)T("("+u.V[v].sub+")",810,60,"italic",C);
+  const d=new Date().toLocaleDateString(ce.loc,{day:'numeric',month:'long',year:'numeric'});
+  x.textAlign='left';x.font=`28px ${F}`;x.fillStyle='#5c6673';x.fillText(ce.d+d,150,H-150);
+  x.textAlign='right';x.font=`26px ${F}`;x.fillText(ce.s,W-150,H-150);
+  x.strokeStyle='#8a8f98';x.lineWidth=2;x.beginPath();x.moveTo(150,H-185);x.lineTo(520,H-185);x.moveTo(W-620,H-185);x.lineTo(W-150,H-185);x.stroke();
+  x.fillStyle=C;x.beginPath();x.arc(W/2,H-215,62,0,7);x.fill();
+  x.strokeStyle='#fbf6e9';x.lineWidth=4;x.beginPath();x.arc(W/2,H-215,50,0,7);x.stroke();
+  x.textAlign='center';x.fillStyle='#fbf6e9';x.font=`bold 56px ${F}`;x.fillText("PM",W/2,H-196);
+}
+function makePDF(jpg,w,h){
+  const enc=t=>new TextEncoder().encode(t),parts=[],off=[];let len=0;
+  const add=t=>{const a=typeof t==='string'?enc(t):t;parts.push(a);len+=a.length};
+  const PW=842,PH=595,c=`q ${PW} 0 0 ${PH} 0 0 cm /Im0 Do Q`;
+  add("%PDF-1.4\n");
+  off[1]=len;add("1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n");
+  off[2]=len;add("2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n");
+  off[3]=len;add(`3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${PW} ${PH}]/Resources<</XObject<</Im0 4 0 R>>>>/Contents 5 0 R>>endobj\n`);
+  off[4]=len;add(`4 0 obj<</Type/XObject/Subtype/Image/Width ${w}/Height ${h}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${jpg.length}>>stream\n`);add(jpg);add("\nendstream\nendobj\n");
+  off[5]=len;add(`5 0 obj<</Length ${c.length}>>stream\n${c}\nendstream\nendobj\n`);
+  const xr=len;add("xref\n0 6\n0000000000 65535 f \n"+[1,2,3,4,5].map(k=>String(off[k]).padStart(10,'0')+" 00000 n \n").join('')+`trailer<</Size 6/Root 1 0 R>>\nstartxref\n${xr}\n%%EOF`);
+  return new Blob(parts,{type:'application/pdf'});
+}
+async function saveFile(blob,name){
+  try{if(window.claude&&window.claude.use){const d=await window.claude.use('downloads');if(d){await d.save({filename:name,data:blob});return}}}
+  catch(e){if(e&&e.code==='declined')return;throw e}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
+}
+intro();
+</script></body></html>
